@@ -1,0 +1,28 @@
+{
+  "name": "module6-group-module6-464227-464460",
+  "version": "1.0.0",
+  "description": "Chat server",
+  "main": "chat-server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon chat-server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cse330-fall-2019/module6-group-module6-464227-464460.git"
+  },
+  "author": "Clay Mudter",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cse330-fall-2019/module6-group-module6-464227-464460/issues"
+  },
+  "homepage": "https://github.com/cse330-fall-2019/module6-group-module6-464227-464460#readme",
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "mime": "^2.4.4",
+    "nodemon": "^1.19.4",
+    "path": "^0.12.7",
+    "socket.io": "^2.3.0",
+    "url": "^0.11.0"
+  }
+}

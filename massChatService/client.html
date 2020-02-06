@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <title>Our Chat Room</title>
+   <link rel="stylesheet" href="appearance.css">
+
+   <script src="/socket.io/socket.io.js"></script>
+   <script>
+
+      var socketio = io.connect();
+      //Get Username From the BackEnd Server
+      socketio.on("connect", function () {
+         var username = prompt("Enter a Username:");
+         while (username == null || !username.replace(/\s/g, '').length) {
+            alert("Invalid Username");
+            username = prompt("Enter a Username:");
+         }
+         socketio.emit("newUser", { 'username': username });
+      });
+
+      //indicate current rooms
+      socketio.on("updateRooms", function (data) {
+         var listRooms = data['listRooms'];
+         var usersInRoom = data['usersInRoom'];
+         document.getElementById("listOfRooms").innerHTML = "";
+         for (var u in listRooms) {
+            var numUsers = usersInRoom[listRooms[u]].length;
+            document.getElementById("listOfRooms").innerHTML += listRooms[u] + ": " + numUsers + " users" + "<br>";
+         }
+      });
+
+      //write down usernames of current room
+      socketio.on("updateUsers", function (data) {
+         var listofUsers = data['users'];
+         document.getElementById("listOfCurrentUser").innerHTML = "";
+         for (var u in listofUsers) {
+            document.getElementById("listOfCurrentUser").innerHTML += `${listofUsers[u]} </br>`;
+         }
+      });
+
+      socketio.on("joinRoom", function (data) {
+         var join = data['joined']
+         if (data['roomPass'] != null) {
+            var pass = prompt("Enter the password");
+            console.log(`Pass is ${pass}`);
+            if (pass === data["roomPass"]) {
+               join = true;
+            }
+            else {
+               join = false;
+            }
+         }
+         if (join) {
+            // On Joining a Room display all of the different things you can do
+            if (data['isAdmin']) {
+               console.log('USER IS ADMIN');
+               document.getElementById('kickUser').innerHTML = `
+               <h3>Kick a User</h3>
+               <input type="text" id="kickedUser" placeholder="Name of User to Kick">
+               <button onclick="kickUser()">Kick</button>
+               <hr>`;
+               document.getElementById('rights').innerHTML = `
+               <h3>Give Rights</h3>
+               <input type="text" id="rightsUser" placeholder="Name of User to Give Rights">
+               <button onclick="giveRights()">Give</button>
+               <hr>`;
+               document.getElementById('permma').innerHTML = `
+               <h3>Ban a User</h3>
+               <input type="text" id="ban" placeholder="Name of User to Ban">
+               <button onclick="banUser()">Ban</button>
+               <hr>`;
+            }
+            document.getElementById('currentRoom').innerHTML = `${data['roomName']}`;
+            document.getElementById('privateMessageDiv').innerHTML = `
+            <h3>Private Message</h3>
+            <label>Recipient: <input type="text" id="receivingEnd"
+            placeholder="Who are you sending to specifically" /></label>
+            <br />
+            <label>Message: <input type="text" id="pm" placeholder="What message do you want to send" /></label>
+            <button id="privateMessageButton" onclick="sendPrivateMessage()">Private Message</button>
+            <hr>`;
+            document.getElementById('inviteRoom').innerHTML = `
+            <h3>Invite to Room</h3>
+            <input type="text" id="inviteName" placeholder="Who do you want to invite?">
+            <button id="inviteRoomBtn" onclick="inviteRoom()">Invite</button>
+            <hr>`;
+            document.getElementById('mainChat').innerHTML = `
+            <h3>Chat Area</h3>
+            <div id="chatlog">
+            </div>
+            <div id="messageSend">
+            </div>`;
+            document.getElementById('messageSend').innerHTML = `<input type="text" id="message_input" />
+            <button id="msg_button" onclick="sendMessage()">send Message</button>`;
+         } else {
+            alert("Failed to Join Room for Some Reason");
+         }
+      });
+
+      socketio.on("updateChat", function (username, data) {
+         //Append an HR thematic break and the escaped HTML of the new message
+         document.getElementById("chatlog").appendChild(document.createTextNode(username + ": " + data['message']));
+         document.getElementById("chatlog").appendChild(document.createElement("hr"));
+      });
+
+      socketio.on("privateMsg", function (username, data) {
+         document.getElementById("chatlog").innerHTML += `<i>Private Message from ${username}: ${data['message']}</i>`;
+         document.getElementById("chatlog").innerHTML += `<hr>`
+      })
+
+      socketio.on("kicked", function () {
+         var isKicked = true;
+         document.getElementById("mainChat").innerHTML = ``;
+         document.getElementById("listOfCurrentUser").innerHTML = ``;
+         document.getElementById('currentRoom').innerHTML = "";
+         document.getElementById('inviteRoom').innerHTML = ``;
+         document.getElementById('privateMessageDiv').innerHTML =``;
+         socketio.emit('leaveRoom', { 'kick': isKicked });
+      })
+
+      socketio.on("banned", function () {
+         var isBanned = true;
+         document.getElementById("mainChat").innerHTML = ``;
+         document.getElementById("listOfCurrentUser").innerHTML = ``;
+         document.getElementById('currentRoom').innerHTML = "";
+         document.getElementById('inviteRoom').innerHTML =``;
+         document.getElementById('privateMessageDiv').innerHTML =``;
+         socketio.emit('leaveRoom', { 'ban': isBanned });
+      })
+
+      socketio.on('sentInvite', function (data) {
+         console.log("HERE");
+         var response = prompt(data['message']);
+         if (response == "Y") {
+            socketio.emit("joinRoom", { "roomName": data['room'] });
+         }
+      })
+
+      function sendMessage() {
+         var msg = document.getElementById("message_input").value;
+         socketio.emit("message_to_server", { message: msg });
+      }
+
+      function sendPrivateMessage() {
+         var receiver = document.getElementById("receivingEnd").value;
+         var privateMessage = document.getElementById("pm").value;
+         socketio.emit("privateMessage", { "message": privateMessage, "receiver": receiver });
+      }
+
+      function kickUser() {
+         var username = document.getElementById("kickedUser").value;
+         socketio.emit("kickUser", { "username": username });
+      }
+
+      function banUser() {
+         var username = document.getElementById("ban").value;
+         socketio.emit("banUser", { "username": username });
+      }
+
+      function createRoom() {
+         var roomName = document.getElementById("roomName").value;
+         if (roomName == null || !roomName.replace(/\s/g, '').length) {
+            alert("Invalid RoomName");
+         } else {
+            socketio.emit("createRoom", { "roomName": roomName });
+         }
+      }
+      function createPrivateRoom() {
+         var roomName = document.getElementById("privateRoom").value;
+         var roomPassword = document.getElementById("roomPassword").value;
+         socketio.emit("createRoom", { "roomName": roomName });
+         socketio.emit("createPrivateRoom", { "roomName": roomName, "roomPassword": roomPassword });
+      }
+
+      function inviteRoom() {
+         var inviteName = document.getElementById("inviteName").value;
+         socketio.emit("inviteRoom", { "username": inviteName });
+      }
+
+      function joinRoom() {
+         var roomName = document.getElementById("joinRoom").value;
+         socketio.emit("joinRoom", { "roomName": roomName });
+      }
+      /* function leaveRoom() {
+         socketio.emit("leaveTheRoom");
+      }  */
+
+      function giveRights() {
+         var rightsReceiver = document.getElementById('rightsUser').value;
+         socketio.emit('addRights', { 'username': rightsReceiver });
+      }
+   </script>
+</head>
+
+<body>
+
+   <h1>Welcome! This is ourChat Room</h1>
+   <h3>Rooms:</h3>
+   <div id="listOfRooms"></div>
+   <hr>
+
+   <h3>Current Room:</h3>
+   <div id="currentRoom"></div>
+   <hr>
+
+   <h3>Create a New Room</h3>
+   <div id="newRoom">
+      <input type="text" id="roomName" placeholder="Name of the room">
+      <button id="CreateNewRoomButton" onclick="createRoom()">Create</button>
+      <hr>
+   </div>
+
+   <h3>Create a Private Room</h3>
+   <div id="NewPrivateRoom">
+      <input type="text" id="privateRoom" placeholder="Key in the name of the private room">
+      <input type="password" id="roomPassword" placeholder="Key in the password">
+      <button id="privateRoomButton" onclick="createPrivateRoom()">Create</button>
+      <hr>
+   </div>
+
+   <h3>Users in Room</h3>
+   <div id="listOfCurrentUser"></div>
+   <hr>
+
+   <div id='joinRoomDiv'>
+      <h3>Join a Room</h3>
+      <input type="text" id="joinRoom" placeholder="Name of Room to join">
+      <button id="joinBtn" onclick="joinRoom()">Join Room</button>
+      <hr>
+   </div>
+
+
+   <div id="inviteRoom">
+   </div>
+   <div id="kickUser"></div>
+   <div id="permma">
+   </div>
+   <div id="rights">
+   </div>
+
+   <div id="privateMessageDiv">
+   </div>
+   <div id="mainChat">
+      <div id="chatlog">
+         <div id="messageSend">
+
+         </div>
+      </div>
+   </div>
+
+</body>
+
+</html>

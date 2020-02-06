@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+   <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+   <div id="chat_room">
+      <div id="main_area">
+         <div id="userStuff">
+            <input type="text" id="username" placeholder="Username">
+            <button id='usernameBtn'>Login</button>
+         </div>
+      </div>
+      <div id="users"></div>
+      <b> ROOMS </b>
+      <div id="rooms"></div>
+      <br />
+      <div id="chat_window">
+         <div id="chatlog"></div>
+      </div>
+      <div id='chat_box'>
+      </div>
+   </div>
+
+
+   <script type="text/javascript">
+
+      var socketio = io.connect();
+
+      var users = document.getElementById('users');
+      var rooms = document.getElementById('rooms');
+
+      var messageBtn = document.getElementById("messageBtn");
+      messageBtn.addEventListener('click', function () {
+         var message = document.getElementById('message');
+         socketio.emit("message_to_server", { message: message.value });
+      })
+
+      var usernameBtn = document.getElementById("usernameBtn");
+      usernameBtn.addEventListener('click', function () {
+         var username = document.getElementById("username");
+         socketio.emit("addUser", username.value);
+      })
+
+      socketio.on("updateChat", function (username, data) {
+         //Append an HR thematic break and the escaped HTML of the new message
+         document.getElementById("chatlog").appendChild(document.createTextNode(username + ": " + data['message']));
+         document.getElementById("chatlog").appendChild(document.createElement("hr"));
+      });
+
+      socketio.on("updateUsers", function (data) {
+         users.innerHTML = "<b> USERS </b> <br/>";
+         for (var u in data) {
+            users.innerHTML += `${u} </br>`;
+         }
+      });
+
+      socketio.on("updateRooms", function (data) {
+         rooms.innerHTML = "";
+         for (var u in data) {
+            rooms.innerHTML += `${u} 
+      
+            </br>`;
+         }
+      });
+
+      socketio.on("joinRoom", function (data) {
+         document.getElementById('chat_box').innerHTML = `
+         <input type="text" id="message" placeholder="Message" />
+         <button id='messageBtn'>Send</button>`;
+      })
+   </script>
+</body>
+
+</html>

@@ -1,0 +1,22 @@
+#messagesend{
+    width: 80%;
+    height: 20px;
+  }
+   #listOfUsers, #removeRoom, #joinRoom, #kick, #ban{
+    position: absolute;
+    right: px;
+  }
+   #listOfRooms, #private{
+    background-color:blueviolet;
+    color: green;
+  }
+   #ListOfRooms, #newRoomsYay{
+    background-color: greenyellow;
+    Color: black;
+  }
+   #ListOfCurrentUser, #NewPrivateRoomYay, #currentRoomBannedUserList{
+    float: left;
+    width: 330px;
+    border-right: 2px dotted blanchedalmond;
+    line-height: 1.9em;
+  }
